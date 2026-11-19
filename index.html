@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#070b1a" />
+<meta name="color-scheme" content="dark light" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="J.Law Notepad" />
+<title>J.Law Notepad</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+<script>
+  /* 在首繪前套用主題，避免閃白（主題僅存本機，不上雲端） */
+  try{ if(localStorage.getItem('notepad_theme_v1')==='light'){document.documentElement.classList.add('light');
+    document.querySelector('meta[name=theme-color]').content='#eef2ff';} }catch(e){}
+</script>
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="mode-list">
+<div id="app">
+
+  <!-- ===== Sidebar / list ===== -->
+  <section id="listPane">
+    <header class="bar top-bar">
+      <h1>J.Law Notepad</h1>
+      <button class="btn icon" id="btnTheme" type="button" aria-label="切換深淺色"></button>
+      <button class="btn primary only-desktop" id="btnNewTop" type="button">＋ 新增</button>
+    </header>
+    <div class="row-pad"><input id="noteSearch" class="field" type="search" enterkeyhint="search" placeholder="搜尋筆記…" autocomplete="off" /></div>
+    <div class="row-pad">
+      <div class="bar">
+        <nav class="pillnav glass scroll-x" id="folderNav" aria-label="資料夾">
+          <div class="track" id="folderTrack"><span class="pill-thumb" id="folderThumb"></span><div id="folderItems"></div></div>
+        </nav>
+        <button class="btn icon" id="btnAddFolder" type="button" aria-label="新增資料夾">＋</button>
+      </div>
+    </div>
+    <div id="notesList" class="scroll-y"></div>
+    <button class="btn primary fab only-mobile" id="btnNew" type="button">＋ 新增筆記</button>
+  </section>
+
+  <!-- ===== Editor ===== -->
+  <section id="editorPane">
+    <header class="bar editor-bar">
+      <button class="btn only-mobile" id="btnBack" type="button">‹ 列表</button>
+      <div class="sp"></div>
+      <button class="btn" id="btnFind" type="button">尋找</button>
+      <button class="btn icon" id="btnMore" type="button" aria-label="更多">⋯</button>
+    </header>
+    <div class="title-wrap"><input id="noteTitle" type="text" placeholder="標題" autocomplete="off" /></div>
+    <div id="editorContainer" class="glass scroll-y">
+      <div id="editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="開始寫筆記… 可貼上文字、連結或圖片"></div>
+      <div id="imgOverlay" class="glass">
+        <button class="btn" type="button" data-size="25%">25%</button>
+        <button class="btn" type="button" data-size="50%">50%</button>
+        <button class="btn" type="button" data-size="75%">75%</button>
+        <button class="btn" type="button" data-size="100%">100%</button>
+        <button class="btn danger" type="button" id="imgDel">刪除</button>
+      </div>
+    </div>
+    <div id="formatWrap">
+      <div id="formatBar" class="glass scroll-x">
+        <button class="btn" type="button" data-cmd="undo" aria-label="復原">↶</button>
+        <button class="btn" type="button" data-cmd="redo" aria-label="重做">↷</button><span class="sep"></span>
+        <button class="btn" type="button" data-cmd="bold" style="font-weight:800">B</button>
+        <button class="btn" type="button" data-cmd="italic" style="font-style:italic">I</button>
+        <button class="btn" type="button" data-cmd="underline" style="text-decoration:underline">U</button>
+        <button class="btn" type="button" data-cmd="strikeThrough"><s>S</s></button><span class="sep"></span>
+        <button class="btn" type="button" data-act="size+">A+</button>
+        <button class="btn" type="button" data-act="size-">A−</button><span class="sep"></span>
+        <button class="btn" type="button" data-cmd="foreColor" data-val="#ef4444" aria-label="紅"><span class="dot" style="background:#ef4444"></span></button>
+        <button class="btn" type="button" data-cmd="foreColor" data-val="#eab308" aria-label="黃"><span class="dot" style="background:#eab308"></span></button>
+        <button class="btn" type="button" data-cmd="foreColor" data-val="#22c55e" aria-label="綠"><span class="dot" style="background:#22c55e"></span></button>
+        <button class="btn" type="button" data-cmd="foreColor" data-val="#3b82f6" aria-label="藍"><span class="dot" style="background:#3b82f6"></span></button>
+        <button class="btn" type="button" data-cmd="hiliteColor" data-val="#fde047" style="color:#111;background:#fde047;min-width:34px;padding:0 8px">螢</button><span class="sep"></span>
+        <button class="btn" type="button" data-act="check" aria-label="待辦">☑</button>
+        <button class="btn" type="button" data-act="link" aria-label="連結">🔗</button>
+        <label class="btn image-btn" aria-label="插入圖片">🖼<input type="file" id="imageUpload" accept="image/*" /></label><span class="sep"></span>
+        <button class="btn" type="button" data-cmd="removeFormat">清除</button>
+      </div>
+    </div>
+    <footer class="status-bar"><span id="saveStatus">就緒</span><span id="charCount">字數: 0</span></footer>
+  </section>
+</div>
+
+<!-- Action sheet -->
+<div id="sheetBackdrop" class="sheet-backdrop"></div>
+<div id="sheet" class="sheet glass" role="dialog" aria-label="更多">
+  <div class="grab"></div>
+  <button class="btn" type="button" data-sheet="pin">📌 置頂／取消置頂</button>
+  <button class="btn" type="button" data-sheet="move">📁 移至資料夾</button>
+  <button class="btn" type="button" data-sheet="export">⬆️ 匯出</button>
+  <button class="btn" type="button" data-sheet="import">⬇️ 匯入 JSON</button>
+  <button class="btn" type="button" data-sheet="clear">🧹 清空內容</button>
+  <button class="btn danger" type="button" data-sheet="delete">🗑 刪除筆記</button>
+  <button class="btn ghost" type="button" data-sheet="close" style="justify-content:center">取消</button>
+</div>
+<input type="file" id="fileImport" accept=".json,application/json" class="hidden" />
+
+<!-- Generic dialog (replaces alert / confirm / prompt) -->
+<div id="dlg" class="overlay" role="dialog" aria-modal="true">
+  <div class="modal glass">
+    <h3 id="dlgTitle"></h3><p id="dlgMsg"></p>
+    <input id="dlgInput" class="field hidden" type="text" autocomplete="off" />
+    <div id="dlgChoices" class="choices"></div>
+    <div id="dlgActions" class="actions"></div>
+  </div>
+</div>
+
+<!-- Find & replace -->
+<div id="findModal" class="overlay" role="dialog" aria-modal="true">
+  <div class="modal glass">
+    <h3>尋找與取代</h3>
+    <input id="findInput" class="field" type="text" placeholder="尋找…" autocomplete="off" />
+    <input id="replaceInput" class="field" type="text" placeholder="取代為…" autocomplete="off" />
+    <p id="findResult" style="height:18px;margin-bottom:10px"></p>
+    <div class="find-row" style="justify-content:flex-end">
+      <button class="btn" type="button" id="findNext">下一個</button>
+      <button class="btn primary" type="button" id="findRep">取代</button>
+      <button class="btn primary" type="button" id="findAll">全部</button>
+      <button class="btn ghost" type="button" id="findClose">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script src="./js/config.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
